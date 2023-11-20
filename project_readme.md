@@ -36,6 +36,17 @@ To run the Jupyter notebook, run the following command in the project directory:
 poetry run jupyter notebook
 ```
 
+The project also needs you to manually install PyQt5, opencv, ffmpeg, and some other packages.
+
+To install them, run the following command in the project directory:
+
+```
+sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev ffmpeg
+poetry shell
+pip install PyQt5 opencv-python scikit-image
+```
+
+
 ## Project Organization
 
 The project is organized as follows:

@@ -53,13 +53,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # second row
         self.arenasLabel = QtWidgets.QLabel("Number of Arenas:")
         self.arenasTextBox = QtWidgets.QLineEdit()
-        self.arenasTextBox.setText("1")
+        self.arenasTextBox.setText("24")
         self.arenasTextBox.setValidator(QtGui.QIntValidator(1, 100))
         self.arenasTextBox.setAlignment(QtCore.Qt.AlignRight)
 
         self.widthLabel = QtWidgets.QLabel("Width of Arena:")
         self.widthTextBox = QtWidgets.QLineEdit()
-        self.widthTextBox.setText("5")
+        self.widthTextBox.setText("50")
         self.widthTextBox.setValidator(QtGui.QIntValidator(1,1000))
         self.widthTextBox.setAlignment(QtCore.Qt.AlignRight)
 
@@ -71,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # third row
         self.poisLabel = QtWidgets.QLabel("Number of POIs:")
         self.poisTextBox = QtWidgets.QLineEdit()
-        self.poisTextBox.setText("0")
+        self.poisTextBox.setText("2")
         self.poisTextBox.setValidator(QtGui.QIntValidator(0, 10))
         self.poisTextBox.setAlignment(QtCore.Qt.AlignRight)
 
@@ -92,7 +92,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # set up the middle layout with an Image Label
         middleLayout = QtWidgets.QHBoxLayout()
         self.imageLabel = QtWidgets.QLabel()
+        # make the image label scalable
         self.imageLabel.setScaledContents(True)
+        self.imageLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
+        # set the image label to accept mouse clicks
+        self.imageLabel.setMouseTracking(True)
+        # change the cursor to a crosshair
+        self.imageLabel.setCursor(QtCore.Qt.CrossCursor)
 
         # add event listener for mouse clicks
         self.imageLabel.installEventFilter(self)
@@ -218,9 +224,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # convert the pixmap position to the position of the image
         x = x * width / pixmap_width
         y = y * height / pixmap_height
-        # convert to int
-        x = int(x)
-        y = int(y)
         return x, y
     
     # a function to draw the points on the image based on where the user clicks
@@ -230,40 +233,45 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imageLabel.setPixmap(self.image)
         self.imageLabel.resize(self.image.size())
         self.imageLabel.show()
-
         # draw the labelled endpoints in red
-        dot_size = int(0.01 * self.image.width())
+        dot_size = int(0.005
+                        * self.image.width())
         painter = QtGui.QPainter(self.image)
 
         painter.setPen(QtGui.QPen(QtCore.Qt.red, dot_size))
         for arena in self.labelled_endpoints:
             for endpoint in arena:
-                painter.drawEllipse(endpoint[0], endpoint[1], dot_size, dot_size)
+                # painter.drawEllipse(endpoint[0], endpoint[1], dot_size, dot_size)
+                painter.drawEllipse(int(np.round(endpoint[0])), int(np.round(endpoint[1])), dot_size, dot_size)
 
         # draw the arena numbers
         painter.setPen(QtGui.QPen(QtCore.Qt.red, 1))
         for i, arena in enumerate(self.labelled_endpoints):
             for j, endpoint in enumerate(arena):
-                painter.drawText(endpoint[0]+dot_size, endpoint[1]-dot_size, f"{i+1}.{j+1}")
+                # painter.drawText(endpoint[0]+dot_size, endpoint[1]-dot_size, f"{i+1}.{j+1}")
+                painter.drawText(int(np.round(endpoint[0]))+dot_size, int(np.round(endpoint[1]))-dot_size, f"{i+1}.{j+1}")
 
         # if there are two endpoints, join them with a line
         painter.setPen(QtGui.QPen(QtCore.Qt.red, dot_size//2))
         for arena in self.labelled_endpoints:
             if len(arena)==2:
-                painter.drawLine(arena[0][0], arena[0][1], arena[1][0], arena[1][1])
+                # painter.drawLine(arena[0][0], arena[0][1], arena[1][0], arena[1][1])
+                painter.drawLine(int(np.round(arena[0][0])), int(np.round(arena[0][1])), int(np.round(arena[1][0])), int(np.round(arena[1][1])))
 
         
         # draw the labelled pois in blue
         painter.setPen(QtGui.QPen(QtCore.Qt.blue, dot_size//2))
         for arena in self.labelled_pois:
             for poi in arena:
-                painter.drawEllipse(poi[0], poi[1], dot_size//2, dot_size//2)
+                # painter.drawEllipse(poi[0], poi[1], dot_size//2, dot_size//2)
+                painter.drawEllipse(int(np.round(poi[0])), int(np.round(poi[1])), dot_size//2, dot_size//2)
 
         # draw the poi numbers
         painter.setPen(QtGui.QPen(QtCore.Qt.blue, 1))
         for i, arena in enumerate(self.labelled_pois):
             for j, poi in enumerate(arena):
-                painter.drawText(poi[0]+dot_size//2, poi[1]-dot_size//2, f"{i+1}.{j+1}")
+                # painter.drawText(poi[0]+dot_size//2, poi[1]-dot_size//2, f"{i+1}.{j+1}")
+                painter.drawText(int(np.round(poi[0]))+dot_size//2, int(np.round(poi[1]))-dot_size//2, f"{i+1}.{j+1}")
         
         painter.end()
 
@@ -421,7 +429,6 @@ class MainWindow(QtWidgets.QMainWindow):
             and event.button() == QtCore.Qt.RightButton
             and self.currently_labeling
         ):
-            print("POI" if self.currently_labeling_poi else "Endpoint")
 
             # handle poi vs endpoint
             # CASE 1: POI LABELLING
@@ -438,7 +445,17 @@ class MainWindow(QtWidgets.QMainWindow):
                     self.instructionsTextBox.setText("Click on the image to label the next POI of the arena.")
                 else:
                     # remove the last poi
-                    self.labelled_pois[-1].pop()
+                    # check if there are any pois left to remove
+                    if len(self.labelled_pois[-1])>0:
+                        self.labelled_pois[-1].pop()
+                    else:
+                        # warn the user that there are no pois to remove
+                        msg = QtWidgets.QMessageBox()
+                        msg.setIcon(QtWidgets.QMessageBox.Warning)
+                        msg.setText("No more POIs to undo!")
+                        msg.setWindowTitle("Warning")
+                        msg.exec_()
+
                     self.draw_points(event)
                     # set the instructions
                     self.instructionsTextBox.setText("Click on the image to label the next POI of the arena. Right click to undo.")
@@ -483,10 +500,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 x1, y1 = arena[0]
                 x2, y2 = arena[1]
                 # define the 4 corners of the rectangle using the width//2 perpendicular to the line joining the endpoints
-                # get the slope of the line joining the endpoints
-                slope = (y2-y1)/(x2-x1)
                 # get the angle of the line joining the endpoints
-                angle = np.arctan(slope)
+                angle = np.arctan2(y2-y1, x2-x1)
                 # get the perpendicular angle
                 perp_angle = angle + np.pi/2
                 # get the x and y offsets
@@ -500,34 +515,33 @@ class MainWindow(QtWidgets.QMainWindow):
                 # create a path
                 path = Path([c1, c2, c3, c4])
                 # fill the path
-                x, y = np.mgrid[:height, :width]
+                x, y = np.mgrid[:width, :height]
                 points = np.transpose((x.ravel(), y.ravel()))
                 grid = path.contains_points(points)
                 grid = grid.reshape(x.shape)
                 # add the grid to the masks
-                masks[f"arena_{len(masks)+1}"] = grid
+                masks[f"arena_{len(masks)+1}"] = grid.astype(np.uint8).T*255
                 # add the grid to the merged mask (red channel)
-                merged[:,:,0] += grid.astype(np.uint8)*255
+                merged[:,:,0] += grid.astype(np.uint8).T*255
 
             # make the merged mask image
-            merged = Image.fromarray(merged.transpose(1,0,2)) 
+            merged_image = Image.fromarray(merged) 
+            # save the merged mask image in the output folder
+            merged_image.save(os.path.dirname(self.backgroundTextBox.text()) + "/{}_merged_mask.png".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]))
             # open the background image
             background = Image.open(self.backgroundTextBox.text())
             # overlay the merged mask on the background image
-            merged.putalpha(128)
-            background.paste(merged, (0,0), merged)
+            merged_image.putalpha(128)
+            background.paste(merged_image, (0,0), merged_image)
 
-            # save the image as a temporary file
-            background.save("temp.png")
+            # save the overlayed image in the output folder
+            background.save(os.path.dirname(self.backgroundTextBox.text()) + "/{}_overlay.png".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]))
 
             # show the merged mask to the user using the image label
-            self.image = QtGui.QPixmap("temp.png")
+            self.image = QtGui.QPixmap(os.path.dirname(self.backgroundTextBox.text()) + "/{}_overlay.png".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]))
             self.imageLabel.setPixmap(self.image)
             self.imageLabel.resize(self.image.size())
             self.imageLabel.show()
-
-            # delete the temporary file
-            os.remove("temp.png")
 
             # alert the user that the masks have been generated
             msg = QtWidgets.QMessageBox()
@@ -557,82 +571,82 @@ class MainWindow(QtWidgets.QMainWindow):
                         break
                     else:
                         continue
-
-        # save the masks as a json file
-        masks = {k: v.tolist() for k, v in masks.items()}
-        with open(os.path.dirname(self.backgroundTextBox.text()) + "/masks.json", "w") as f:
-            json.dump(masks, f)
-
-        # design a linear transformation function that maps each rectangle to a standard square
-        transforms = {}
-        for arena in self.labelled_endpoints:
+        
+        # loop through pois and check if they are inside the arenas
+        if self.n_pois > 0:
+            self.instructionsTextBox.setText("Checking if the POIs are inside the arenas...")
+            for i, arena in enumerate(self.labelled_endpoints):
                 # get the endpoints
                 x1, y1 = arena[0]
                 x2, y2 = arena[1]
                 # define the 4 corners of the rectangle using the width//2 perpendicular to the line joining the endpoints
-                # get the slope of the line joining the endpoints
-                slope = (y2-y1)/(x2-x1)
                 # get the angle of the line joining the endpoints
-                angle = np.arctan(slope)
+                angle = np.arctan2(y2-y1, x2-x1)
                 # get the perpendicular angle
                 perp_angle = angle + np.pi/2
                 # get the x and y offsets
                 x_offset = self.arena_width//2 * np.cos(perp_angle)
                 y_offset = self.arena_width//2 * np.sin(perp_angle)
                 # get the 4 corners
-                c1 = (x1+x_offset, y1+y_offset)
-                c2 = (x1-x_offset, y1-y_offset)
-                c3 = (x2-x_offset, y2-y_offset)
-                c4 = (x2+x_offset, y2+y_offset)
-                # define the transformation function
-                def transform(point):
-                    # get the x and y coordinates
-                    x, y = point
-                    # transform to bring the first endpoint to (0,0)
-                    x, y = x-x1, y-y1
-                    # get length of the line joining the endpoints
-                    length = np.sqrt((x2-x1)**2 + (y2-y1)**2)
-                    # scale to bring the second endpoint to a radius of 1
-                    x, y = x/length, y/length
-                    # rotate by -angle to bring the second endpoint to (1,0)
-                    x, y = x*np.cos(-angle) - y*np.sin(-angle), x*np.sin(-angle) + y*np.cos(-angle)
-                    # # scale to bring the width to 1
-                    x, y = x, y*length/self.arena_width
-                    # return the transformed coordinates
-                    return x, y
-                
-                # plot the two endpoints and the transformed corners
-                for i,c in enumerate([arena[0],arena[1],c1, c2, c3, c4]):
-                    plt.scatter(*transform(c), c=plt.cm.viridis(i/6), label=f"Point {i+1}")
-                plt.gca().set_aspect('equal', adjustable='box')
-                plt.legend()
-                plt.show()
+                c1 = (int(x1+x_offset), int(y1+y_offset))
+                c2 = (int(x1-x_offset), int(y1-y_offset))
+                c3 = (int(x2-x_offset), int(y2-y_offset))
+                c4 = (int(x2+x_offset), int(y2+y_offset))
+                # create a path
+                path = Path([c1, c2, c3, c4])
+                # loop through the pois
+                to_pop = []
+                if len(self.labelled_pois[i])>0:
+                    for j, poi in enumerate(self.labelled_pois[i]):
+                        # check if the poi is inside the arena
+                        if path.contains_point(poi):
+                            # keep the poi
+                            pass
+                        else:
+                            print(f"POI {j+1} of arena {i+1} is outside the arena. Removing it...")
+                            # remove the poi
+                            to_pop.append(j)
+                # remove the pois
+                if len(to_pop)>0:
+                    for j in to_pop[::-1]:
+                        self.labelled_pois[i].pop(j)
 
-                # save the transformation function
-                transforms[f"arena_{len(transforms)+1}"] = transform
+        # save the masks as a json file
+        self.instructionsTextBox.setText("Saving the masks...")
+        masks = {k: v.tolist() for k, v in masks.items()}
+        with open(os.path.dirname(self.backgroundTextBox.text()) + "/{}_masks.json".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]), "w") as f:
+            json.dump(masks, f)
 
-                
+        # save the endpoints as a json file
+        self.instructionsTextBox.setText("Saving the endpoints...")
+        endpoints = {}
+        endpoints["width"] = self.arena_width
+        for i, arena in enumerate(self.labelled_endpoints):
+            endpoints[f"arena_{i+1}_original"] = [list(endpoint) for endpoint in arena]
+        with open(os.path.dirname(self.backgroundTextBox.text()) + "/{}_endpoints.json".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]), "w") as f:
+            json.dump(endpoints, f)
 
         # make a poi dictionary
+        self.instructionsTextBox.setText("Saving the POIs...")
         pois = {}
         for i, arena in enumerate(self.labelled_pois):
             pois[f"arena_{i+1}_original"] = np.array(arena).tolist()
-            pois[f"arena_{i+1}_transformed"] = [list(transforms[f"arena_{i+1}"](poi)) for poi in arena]
+            # pois[f"arena_{i+1}_transformed"] = [list(transforms[f"arena_{i+1}"](poi)) for poi in arena]
         
         # DEBUG: PLot the transformed pois
-        for i, arena in enumerate(self.labelled_pois):
-            for j,poi in enumerate(pois["arena_1_transformed"]):
-                plt.scatter(poi[0], poi[1], c=plt.cm.viridis(j/len(pois[f"arena_{i+1}_transformed"])), label=f"POI {j+1}")
-        plt.legend()
-        plt.show()
+        # for i, arena in enumerate(self.labelled_pois):
+        #     for j,poi in enumerate(pois["arena_1_transformed"]):
+        #         plt.scatter(poi[0], poi[1], c=plt.cm.viridis(j/len(pois[f"arena_{i+1}_transformed"])), label=f"POI {j+1}")
+        # plt.legend()
+        # plt.show()
 
         # save the pois as a json file
-        with open(os.path.dirname(self.backgroundTextBox.text()) + "/pois.json", "w") as f:
+        with open(os.path.dirname(self.backgroundTextBox.text()) + "/{}_pois.json".format(os.path.basename(self.backgroundTextBox.text()).split(".")[0]), "w") as f:
             json.dump(pois, f)
 
 
         # set the instructions
-        self.instructionsTextBox.setText("Click on Start Labeling to start again.")
+        self.instructionsTextBox.setText("Completed. Click on Start Labeling to start again.")
         # set the status variables
         self.currently_labeling = False
         self.currently_labeling_poi = False
