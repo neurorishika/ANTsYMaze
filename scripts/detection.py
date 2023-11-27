@@ -147,7 +147,7 @@ def process_frames(video_file, frames, background, background_masks, N_ARENAS, v
         ret, frame = cap.read()
         # check if the frame is valid
         if not ret or frame is None:
-            frame = np.zeros((background.shape[0], background.shape[1], 3))
+            continue
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         positions.append(get_ant_locations(frame, background, background_masks, N_ARENAS))
         frame_no.append(start_frame+n)
