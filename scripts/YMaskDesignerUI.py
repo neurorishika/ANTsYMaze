@@ -59,7 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.widthLabel = QtWidgets.QLabel("Width of Arena:")
         self.widthTextBox = QtWidgets.QLineEdit()
-        self.widthTextBox.setText("75")
+        self.widthTextBox.setText("100")
         self.widthTextBox.setValidator(QtGui.QIntValidator(1,1000))
         self.widthTextBox.setAlignment(QtCore.Qt.AlignRight)
 
