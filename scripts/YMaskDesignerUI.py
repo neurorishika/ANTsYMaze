@@ -599,30 +599,36 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.n_pois > 0:
             self.instructionsTextBox.setText("Checking if the POIs are inside the arenas...")
             for i, arena in enumerate(self.labelled_endpoints):
-                # get the endpoints
-                x1, y1 = arena[0]
-                x2, y2 = arena[1]
-                # define the 4 corners of the rectangle using the width//2 perpendicular to the line joining the endpoints
-                # get the angle of the line joining the endpoints
-                angle = np.arctan2(y2-y1, x2-x1)
-                # get the perpendicular angle
-                perp_angle = angle + np.pi/2
-                # get the x and y offsets
-                x_offset = self.arena_width//2 * np.cos(perp_angle)
-                y_offset = self.arena_width//2 * np.sin(perp_angle)
-                # get the 4 corners
-                c1 = (int(x1+x_offset), int(y1+y_offset))
-                c2 = (int(x1-x_offset), int(y1-y_offset))
-                c3 = (int(x2-x_offset), int(y2-y_offset))
-                c4 = (int(x2+x_offset), int(y2+y_offset))
-                # create a path
-                path = Path([c1, c2, c3, c4])
+                # create all the paths for the arena
+                paths = []
+                centroid = np.mean(arena, axis=0)
+                # loop through the endpoints
+                for endpoint in arena:
+                    # get the angle of the line joining the endpoint and the centroid
+                    angle = np.arctan2(centroid[1]-endpoint[1], centroid[0]-endpoint[0])
+                    # get the perpendicular angle
+                    perp_angle = angle + np.pi/2
+                    # get the x and y offsets
+                    x_offset = self.arena_width//2 * np.cos(perp_angle)
+                    y_offset = self.arena_width//2 * np.sin(perp_angle)
+                    # get the corners of the pentagon (rectangl + centroid)
+                    c1 = (int(endpoint[0]+x_offset), int(endpoint[1]+y_offset))
+                    c2 = (int(endpoint[0]-x_offset), int(endpoint[1]-y_offset))
+                    c3 = (int(centroid[0]-x_offset), int(centroid[1]-y_offset))
+                    # centroid is the 4th corner
+                    c4 = (int(centroid[0]), int(centroid[1]))
+                    # the fifth corner is the last corner of the rectangle
+                    c5 = (int(centroid[0]+x_offset), int(centroid[1]+y_offset))
+                    # create a path
+                    path = Path([c1, c2, c3, c4, c5])
+                    paths.append(path)
+
                 # loop through the pois
                 to_pop = []
                 if len(self.labelled_pois[i])>0:
                     for j, poi in enumerate(self.labelled_pois[i]):
                         # check if the poi is inside the arena
-                        if path.contains_point(poi):
+                        if np.any([path.contains_point(poi) for path in paths]):
                             # keep the poi
                             pass
                         else:
