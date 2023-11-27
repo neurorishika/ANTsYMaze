@@ -258,7 +258,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 centroid = np.mean(arena, axis=0)
                 # draw the centroid point
                 painter.setPen(QtGui.QPen(QtCore.Qt.red, dot_size))
-                painter.drawEllipse(centroid[0], centroid[1], dot_size, dot_size)
+                painter.drawEllipse(int(np.round(centroid[0])), int(np.round(centroid[1])), dot_size, dot_size)
                 # connect each endpoint to the centroid
                 painter.setPen(QtGui.QPen(QtCore.Qt.red, dot_size//2))
                 for endpoint in arena:
