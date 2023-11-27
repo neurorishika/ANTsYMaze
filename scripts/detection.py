@@ -245,7 +245,7 @@ for CAM_NO in CAM_NOs:
     print('Running processing in parallel with {} threads'.format(n_threads))
     processed_data = Parallel(n_jobs=n_threads)(delayed(process_frames)(data_dir + '/cam{}_merged.mp4'.format(CAM_NO), frames, background, background_masks, N_ARENAS) for frames in frames_per_thread)
     pos = np.concatenate([processed_data[i][0] for i in range(len(processed_data))])
-    t = np.array([processed_data[i][1] for i in range(len(processed_data))]).flatten()
+    t = np.concatenate([processed_data[i][1] for i in range(len(processed_data))])
     # fill in the nan values
     if fill_nan:
         print('Filling nan values')
