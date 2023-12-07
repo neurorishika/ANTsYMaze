@@ -166,9 +166,8 @@ directory.path
 # Mac OS
 **/.DS_Store
 
-# Ignore ALL MP4, png, json, csv and npy files
+# Ignore ALL MP4, csv and npy files
 **/*.mp4
-**/*.png
 **/*.csv
 **/*.npy
 
